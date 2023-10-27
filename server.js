@@ -20,6 +20,8 @@ const app = require("./app");
 const http = require("http");
 const server = http.createServer(app);
 
+const User = require("./models/user");
+
 
 
 // Implementation of the sockets module
@@ -55,34 +57,83 @@ server.listen(port, () => {
 io.on("connection", async (socket) => {
   console.log(JSON.stringify(socket.handshake.query))
   console.log(socket)
-  const user_id = sockets.handshake.query["user_id"];
-  const socket_id = sockets.id;
+  const user_id = socket.handshake.query["user_id"];
+  const socket_id = socket.id;
 
   console.log("User connected  ${socket_id}");
 
 
   if (Boolean(user_id)) {
-    await User.findByIdAndUpdate(socket_id, { socket_id, })
+    User.findByIdAndUpdate(user_id, { socket_id, })
   }
   // wrting my own socketes even listner 
   socket.on("friend_request", async (data) => {
     console.log(data.to);
 
+    // data => { to, from}
 
-// data => { to, from}
+    const to_user = await User.findById(data.to).select("socket_id");
 
-    const to = await User.findById(data.to);
+    const from_user = await User.findById(data.to).select("socket_id");
+
+
+    //  Creating a friend request model
+
+    await FriendRequestModel.create({
+      sender: data.from,
+      recipient: data.to
+    })
+
+    // emit event => new_friend request
 
     //  Creating a friend request 
-    io.to(to.socket_id.emit("friend_request", {
+    io.to(to_user.socket_id).emit("friend_request", {
+      message: "New friend request Received ",
+    });
+    // emit event => new_friend request sent 
 
-    }))
-
+    io.to(from_user.socket_id).emit("friend_request_sent", {
+      message: "Request sent successfully!",
+    });
   });
 
 
+  socket.on("accepted_request", async (data) => {
+    console.log(data);
 
-})
+    const request_doc = await FriendRequest.findById(data.recipient_id);
+    console.log(request_doc);
+
+    // unique request identifier
+
+    const sender = await FriendById(request_doc.sender);
+    const receiver = await FriendById(request_doc.recipient);
+
+    sender.friends.push(request_doc.recipient);
+    receiver.friends.push(request_doc.sender);
+
+
+    await receiver.save({new: true, validateModifiedOnly: true});
+    await sender.save({new: true, validateModifiedOnly: true});
+
+    await FriendRequest.findByIdAndDelete(dara.request_id);
+
+    io.to(sender.socket_id).emit("accepted_request", {
+      message: "Request accepted successfully!",
+    });
+    io.to(receiver.socket_id).emit("accepted_request", {
+      message: "Request accepted successfully!",
+    });
+  });
+
+
+  socket.on("end", function () {
+    console.log("Closing connection");
+    socket.disconnect(0);
+  })
+
+
+});
 
 
 process.on("unhandledRejection", (err) => {
