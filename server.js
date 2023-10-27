@@ -3,6 +3,10 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config.env" });
 
+const { Server } = require("socket.io"); // Add this
+// Add this
+// Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
+
 process.on("uncaughtException", (err) => {
   console.log(err);
   console.log("UNCAUGHT Exception! Shutting down ...");
@@ -16,15 +20,12 @@ const app = require("./app");
 const http = require("http");
 const server = http.createServer(app);
 
-const { Server } = require("socket.io"); // Add this
 
 
-
-// Add this
-// Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
+// Implementation of the sockets module
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"],
   },
 });
@@ -50,6 +51,35 @@ const port = process.env.PORT || 8000;
 server.listen(port, () => {
   console.log(`App running on port ${port} ...`);
 });
+
+io.on("connection", async (socket) => {
+  console.log(socket)
+  const user_id = sockets.handshake.query["user_id"];
+  const socket_id = sockets.id;
+
+  console.log("User connected  ${socket_id}");
+
+
+  if (user_id) {
+    await User.findByIdAndUpdate(socket_id, { socket_id, })
+  }
+  // wrting my own socketes even listner 
+  socket.on("friend_request", async (data) => {
+    console.log(data.to);
+
+
+    const to = await User.findById(data.to);
+
+    //  Creating a friend request 
+    io.to(to.socket_id.emit("friend_request", {
+
+    }))
+
+  });
+
+
+
+})
 
 
 process.on("unhandledRejection", (err) => {
