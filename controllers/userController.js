@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const catchAsync = require("../utils/catchAsync");
 const filterObj = require("../utils/filterObj");
+const FriendRequest = require("../models/friendRequest");
 
 exports.getMe = catchAsync(async (req, res, next) => {
   res.status(200).json({
@@ -63,14 +64,15 @@ exports.getRequests = catchAsync(async (req, res, next) => {
 
 
 exports.getFriends = catchAsync(async (req, res, next) => {
-  const this_user = await User.findById(req.user._id).populate(
+  const this_user = await User.findById(req.user._id)
+  .populate(
     "friends",
     "_id firstName lastName"
   );
   res.status(200).json({
     status: "success",
     data: this_user.friends,
-    message: "Friends found successfully!",
+    message: "friends found successfully!",
   });
 });
 

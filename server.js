@@ -53,6 +53,7 @@ server.listen(port, () => {
 });
 
 io.on("connection", async (socket) => {
+  console.log(JSON.stringify(socket.handshake.query))
   console.log(socket)
   const user_id = sockets.handshake.query["user_id"];
   const socket_id = sockets.id;
@@ -60,13 +61,15 @@ io.on("connection", async (socket) => {
   console.log("User connected  ${socket_id}");
 
 
-  if (user_id) {
+  if (Boolean(user_id)) {
     await User.findByIdAndUpdate(socket_id, { socket_id, })
   }
   // wrting my own socketes even listner 
   socket.on("friend_request", async (data) => {
     console.log(data.to);
 
+
+// data => { to, from}
 
     const to = await User.findById(data.to);
 
