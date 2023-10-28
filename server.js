@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config.env" });
 
+const path = require("path");
+
 const { Server } = require("socket.io"); // Add this
 // Add this
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
@@ -64,7 +66,7 @@ io.on("connection", async (socket) => {
 
 
   if (Boolean(user_id)) {
-    User.findByIdAndUpdate(user_id, { socket_id, })
+    User.findByIdAndUpdate(user_id, { socket_id, status: "Online"})
   }
   // wrting my own socketes even listner 
   socket.on("friend_request", async (data) => {
@@ -122,12 +124,59 @@ io.on("connection", async (socket) => {
       message: "Request accepted successfully!",
     });
     io.to(receiver.socket_id).emit("accepted_request", {
-      message: "Request accepted successfully!",
+      message: "Friend accepted successfully!",
     });
   });
 
+  //  to handle incoming messages which are text and linked messages
 
-  socket.on("end", function () {
+  socket.on("text_message", (data) => {
+    console.log("recieved message", data);
+
+    //  data => { to, from, message}
+
+    //  save the message to database
+
+    //  emit event => new_message
+
+    //  emit event => new_message_sent
+
+    //  emit event => new_message_received
+
+
+  })
+
+  socket.on("file_messagee", (data) => {
+    console.log("recieved message", data);
+
+    // data => { to, from, text, file}
+    // Get the file extention
+    const fileExtention  = path.extname(data.file.name);
+
+    //  generate a unique file name
+
+    const fileName = `${Date.now()}_${Math.floor(Math.random() *1000)}${fileExtention}`
+    
+    //  Upload file to AWS s3 bucket
+
+    //  create a new conversation if not exists already and add the message to it
+    //  save to s3 bucket
+    //  emit incoming message -> to user
+    // emit outgoing message -> from user
+
+
+  })
+
+
+  socket.on("end", async (data) => {
+    // mangodb query for find user by_id and set status to offline
+    if(data.user_id){
+      await User.findByIdAndUpdate(data.user_id, {status: "Offline"})
+    }
+
+    //after updating the value ,we broadcast a notification user disconnected from server
+
+
     console.log("Closing connection");
     socket.disconnect(0);
   })
