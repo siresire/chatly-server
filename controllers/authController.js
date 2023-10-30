@@ -307,6 +307,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     status: "success",
     message: "Password Reseted Successfully",
     token,
+    user_id: user._id,
   });
 });
 
